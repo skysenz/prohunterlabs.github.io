@@ -1,18 +1,964 @@
-# This .gitignore is appropriate for repositories deployed to GitHub Pages and using
-# a Gemfile as specified at https://github.com/github/pages-gem#conventional
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SECLAB | Interactive CTF Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-# Basic Jekyll gitignores (synchronize to Jekyll.gitignore)
-_site/
-.sass-cache/
-.jekyll-cache/
-.jekyll-metadata
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            background: #0a0c10;
+            color: #e4e6eb;
+            min-height: 100vh;
+        }
 
-# Additional Ruby/bundler ignore for when you run: bundle install
-/vendor
+        /* Auth Modal Styles */
+        .auth-modal {
+            display: flex;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(12px);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
 
-# Specific ignore for GitHub Pages
-# GitHub Pages will always use its own deployed version of pages-gem 
-# This means GitHub Pages will NOT use your Gemfile.lock and therefore it is
-# counterproductive to check this file into the repository.
-# Details at https://github.com/github/pages-gem/issues/768
-Gemfile.lock
+        .auth-container {
+            background: linear-gradient(145deg, #11151f, #0c0f18);
+            border-radius: 32px;
+            width: 450px;
+            max-width: 90%;
+            padding: 40px;
+            border: 1px solid #2d3348;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .auth-header h2 {
+            font-size: 2rem;
+            background: linear-gradient(135deg, #6c63ff, #b84cff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .auth-input {
+            width: 100%;
+            padding: 14px 18px;
+            margin: 12px 0;
+            background: #1a1e2c;
+            border: 1px solid #2d3348;
+            border-radius: 16px;
+            color: white;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+
+        .auth-input:focus {
+            outline: none;
+            border-color: #6c63ff;
+            box-shadow: 0 0 0 2px rgba(108, 99, 255, 0.2);
+        }
+
+        .auth-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(95deg, #6c63ff, #b84cff);
+            border: none;
+            border-radius: 40px;
+            color: white;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 16px;
+            transition: transform 0.1s;
+        }
+
+        .auth-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .auth-switch {
+            text-align: center;
+            margin-top: 24px;
+            color: #8b92b0;
+        }
+
+        .auth-switch a {
+            color: #6c63ff;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .forgot-link {
+            text-align: right;
+            margin-top: 8px;
+        }
+
+        .forgot-link a {
+            color: #8b92b0;
+            font-size: 0.8rem;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .error-msg {
+            color: #f87171;
+            font-size: 0.8rem;
+            margin-top: 4px;
+        }
+
+        .success-msg {
+            color: #4ade80;
+            font-size: 0.8rem;
+            margin-top: 4px;
+        }
+
+        /* Navbar */
+        .navbar {
+            background: #0f1117;
+            border-bottom: 1px solid #1f232e;
+            padding: 0 32px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.6rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #6c63ff, #b84cff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .nav-stats {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+        }
+
+        .nav-stat {
+            background: #1a1d2b;
+            padding: 6px 16px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .nav-stat span {
+            color: #6c63ff;
+            font-weight: bold;
+            margin-right: 6px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .username-display {
+            color: #b84cff;
+            font-weight: 600;
+        }
+
+        .logout-btn {
+            background: #2d2f42;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 40px;
+            color: white;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        /* Main container */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 32px 24px;
+        }
+
+        /* Welcome banner */
+        .welcome-banner {
+            background: linear-gradient(135deg, #13172b, #0c0f1a);
+            border-radius: 24px;
+            padding: 32px;
+            margin-bottom: 40px;
+            border: 1px solid #252a3a;
+        }
+
+        .welcome-banner h1 {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .progress-section {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .progress-bar-container {
+            flex: 1;
+            background: #1e2230;
+            border-radius: 30px;
+            height: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #6c63ff, #b84cff);
+            width: 0%;
+            height: 100%;
+            border-radius: 30px;
+            transition: width 0.3s ease;
+        }
+
+        .challenge-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .challenge-card {
+            background: #11141f;
+            border-radius: 20px;
+            border: 1px solid #202434;
+            overflow: hidden;
+            transition: all 0.25s;
+            cursor: pointer;
+        }
+
+        .challenge-card:hover {
+            transform: translateY(-4px);
+            border-color: #6c63ff;
+            box-shadow: 0 12px 28px rgba(108, 99, 255, 0.15);
+        }
+
+        .card-preview {
+            height: 140px;
+            background: linear-gradient(145deg, #1a1f30, #0f1320);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card-preview .icon {
+            font-size: 3.5rem;
+            opacity: 0.7;
+        }
+
+        .difficulty {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+
+        .difficulty.easy { background: #2e7d32; color: #c8e6c9; }
+        .difficulty.medium { background: #ed6c02; color: #ffecb3; }
+
+        .card-content {
+            padding: 20px;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .card-points {
+            color: #ffd700;
+            font-size: 0.8rem;
+        }
+
+        .card-status {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            background: #2a2e42;
+        }
+
+        .card-status.solved {
+            background: #1e4620;
+            color: #81c784;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #0f111a;
+            border-radius: 32px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 85vh;
+            overflow-y: auto;
+            border: 1px solid #2d3348;
+        }
+
+        .modal-header {
+            padding: 20px 28px;
+            border-bottom: 1px solid #202434;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            background: #0f111a;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.8rem;
+            cursor: pointer;
+        }
+
+        .modal-body {
+            padding: 28px;
+        }
+
+        .challenge-description {
+            background: #0a0c14;
+            padding: 20px;
+            border-radius: 20px;
+            margin-bottom: 24px;
+            border-left: 4px solid #6c63ff;
+        }
+
+        .lab-environment {
+            background: #080a10;
+            border-radius: 20px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .interactive-area {
+            background: #03050a;
+            border-radius: 16px;
+            padding: 20px;
+            margin: 16px 0;
+        }
+
+        .flag-submit {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .flag-submit input {
+            flex: 1;
+            background: #1a1e2c;
+            border: 1px solid #2d3348;
+            padding: 12px 18px;
+            border-radius: 40px;
+            color: white;
+            font-family: monospace;
+        }
+
+        .flag-submit button {
+            background: #6c63ff;
+            border: none;
+            padding: 0 28px;
+            border-radius: 40px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .start-lab-btn {
+            background: linear-gradient(95deg, #2a2f4e, #1a1e36);
+            border: 1px solid #6c63ff;
+            padding: 12px 28px;
+            border-radius: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 16px;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #1e293b;
+            padding: 12px 24px;
+            border-radius: 12px;
+            border-left: 4px solid #6c63ff;
+            z-index: 1100;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        input, textarea, button {
+            font-family: inherit;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f111a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2d3348;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Auth Modal -->
+<div id="authModal" class="auth-modal">
+    <div class="auth-container" id="authContainer">
+        <!-- Dynamic auth form will be injected -->
+    </div>
+</div>
+
+<!-- Main App (hidden until logged in) -->
+<div id="mainApp" style="display: none;">
+    <nav class="navbar">
+        <div class="logo">
+            <span>🛡️</span> SEC<span style="color:#b84cff;">LAB</span>
+        </div>
+        <div class="nav-stats">
+            <div class="nav-stat"><span>🏆</span> Points: <span id="totalPoints">0</span></div>
+            <div class="nav-stat"><span>✅</span> Solved: <span id="solvedCountNav">0</span>/<span id="totalChallenges">0</span></div>
+            <div class="user-info">
+                <span class="username-display" id="usernameDisplay"></span>
+                <button class="logout-btn" id="logoutBtn">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <div class="welcome-banner">
+            <h1>Welcome back, <span id="welcomeUsername">Hacker</span>!</h1>
+            <p>Practice real-world vulnerabilities in a safe, gamified environment</p>
+            <div class="progress-section">
+                <div class="progress-bar-container">
+                    <div class="progress-fill" id="globalProgress"></div>
+                </div>
+                <div class="progress-text" id="progressPercent">0% complete</div>
+            </div>
+        </div>
+
+        <div class="challenge-grid" id="challengeGrid"></div>
+    </div>
+</div>
+
+<!-- Lab Modal -->
+<div id="labModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">Challenge Lab</h3>
+            <button class="close-modal" id="closeModalBtn">&times;</button>
+        </div>
+        <div class="modal-body" id="modalBody"></div>
+    </div>
+</div>
+
+<script>
+    // ---------- AUTH SYSTEM ----------
+    let currentUser = null;
+
+    function loadUsers() {
+        const users = localStorage.getItem("seclab_users");
+        return users ? JSON.parse(users) : [];
+    }
+
+    function saveUsers(users) {
+        localStorage.setItem("seclab_users", JSON.stringify(users));
+    }
+
+    function saveUserProgress(username, progress) {
+        const users = loadUsers();
+        const userIndex = users.findIndex(u => u.username === username);
+        if (userIndex !== -1) {
+            users[userIndex].progress = progress;
+            saveUsers(users);
+        }
+    }
+
+    function loadUserProgress(username) {
+        const users = loadUsers();
+        const user = users.find(u => u.username === username);
+        return user?.progress || { solvedChallenges: [], totalPoints: 0 };
+    }
+
+    function showAuthForm(type) {
+        const container = document.getElementById("authContainer");
+        if (type === "login") {
+            container.innerHTML = `
+                <div class="auth-header">
+                    <h2>SECLAB</h2>
+                    <p style="color:#8b92b0; margin-top:8px;">Login to continue</p>
+                </div>
+                <input type="text" id="loginUsername" class="auth-input" placeholder="Username" autocomplete="off">
+                <input type="password" id="loginPassword" class="auth-input" placeholder="Password">
+                <div id="loginError" class="error-msg"></div>
+                <button class="auth-btn" id="loginBtn">Login →</button>
+                <div class="auth-switch">
+                    Don't have an account? <a id="switchToSignup">Sign up</a>
+                </div>
+                <div class="forgot-link">
+                    <a id="switchToForgot">Forgot password?</a>
+                </div>
+            `;
+            document.getElementById("loginBtn")?.addEventListener("click", handleLogin);
+            document.getElementById("switchToSignup")?.addEventListener("click", () => showAuthForm("signup"));
+            document.getElementById("switchToForgot")?.addEventListener("click", () => showAuthForm("forgot"));
+        } else if (type === "signup") {
+            container.innerHTML = `
+                <div class="auth-header">
+                    <h2>Create Account</h2>
+                    <p style="color:#8b92b0; margin-top:8px;">Join SECLAB</p>
+                </div>
+                <input type="text" id="signupUsername" class="auth-input" placeholder="Username" autocomplete="off">
+                <input type="email" id="signupEmail" class="auth-input" placeholder="Email">
+                <input type="password" id="signupPassword" class="auth-input" placeholder="Password">
+                <input type="password" id="signupConfirm" class="auth-input" placeholder="Confirm Password">
+                <div id="signupError" class="error-msg"></div>
+                <button class="auth-btn" id="signupBtn">Sign Up →</button>
+                <div class="auth-switch">
+                    Already have an account? <a id="switchToLogin">Login</a>
+                </div>
+            `;
+            document.getElementById("signupBtn")?.addEventListener("click", handleSignup);
+            document.getElementById("switchToLogin")?.addEventListener("click", () => showAuthForm("login"));
+        } else if (type === "forgot") {
+            container.innerHTML = `
+                <div class="auth-header">
+                    <h2>Reset Password</h2>
+                    <p style="color:#8b92b0; margin-top:8px;">Enter your email to reset password</p>
+                </div>
+                <input type="email" id="forgotEmail" class="auth-input" placeholder="Email">
+                <div id="forgotError" class="error-msg"></div>
+                <div id="forgotSuccess" class="success-msg"></div>
+                <button class="auth-btn" id="resetBtn">Send Reset Link</button>
+                <div class="auth-switch">
+                    <a id="backToLogin">Back to Login</a>
+                </div>
+            `;
+            document.getElementById("resetBtn")?.addEventListener("click", handleForgotPassword);
+            document.getElementById("backToLogin")?.addEventListener("click", () => showAuthForm("login"));
+        }
+    }
+
+    function handleLogin() {
+        const username = document.getElementById("loginUsername")?.value.trim();
+        const password = document.getElementById("loginPassword")?.value;
+        const errorDiv = document.getElementById("loginError");
+        
+        if (!username || !password) {
+            errorDiv.innerText = "Please fill all fields";
+            return;
+        }
+        
+        const users = loadUsers();
+        const user = users.find(u => u.username === username && u.password === password);
+        
+        if (user) {
+            currentUser = username;
+            localStorage.setItem("seclab_current_user", username);
+            document.getElementById("authModal").style.display = "none";
+            document.getElementById("mainApp").style.display = "block";
+            document.getElementById("welcomeUsername").innerText = username;
+            document.getElementById("usernameDisplay").innerText = username;
+            loadUserChallenges();
+            updateStats();
+            renderChallengeCards();
+        } else {
+            errorDiv.innerText = "Invalid username or password";
+        }
+    }
+
+    function handleSignup() {
+        const username = document.getElementById("signupUsername")?.value.trim();
+        const email = document.getElementById("signupEmail")?.value.trim();
+        const password = document.getElementById("signupPassword")?.value;
+        const confirm = document.getElementById("signupConfirm")?.value;
+        const errorDiv = document.getElementById("signupError");
+        
+        if (!username || !email || !password) {
+            errorDiv.innerText = "Please fill all fields";
+            return;
+        }
+        
+        if (password !== confirm) {
+            errorDiv.innerText = "Passwords do not match";
+            return;
+        }
+        
+        if (password.length < 4) {
+            errorDiv.innerText = "Password must be at least 4 characters";
+            return;
+        }
+        
+        const users = loadUsers();
+        if (users.find(u => u.username === username)) {
+            errorDiv.innerText = "Username already exists";
+            return;
+        }
+        
+        if (users.find(u => u.email === email)) {
+            errorDiv.innerText = "Email already registered";
+            return;
+        }
+        
+        const newUser = {
+            username,
+            email,
+            password,
+            progress: { solvedChallenges: [], totalPoints: 0 }
+        };
+        
+        users.push(newUser);
+        saveUsers(users);
+        showToast("Account created! Please login.", "#2e7d32");
+        showAuthForm("login");
+    }
+
+    function handleForgotPassword() {
+        const email = document.getElementById("forgotEmail")?.value.trim();
+        const errorDiv = document.getElementById("forgotError");
+        const successDiv = document.getElementById("forgotSuccess");
+        
+        if (!email) {
+            errorDiv.innerText = "Please enter your email";
+            return;
+        }
+        
+        const users = loadUsers();
+        const user = users.find(u => u.email === email);
+        
+        if (user) {
+            // Simulate sending reset email
+            const tempPassword = Math.random().toString(36).slice(-8);
+            user.password = tempPassword;
+            saveUsers(users);
+            successDiv.innerText = `Reset successful! Your temporary password: ${tempPassword}\nPlease login and change your password.`;
+            errorDiv.innerText = "";
+            setTimeout(() => showAuthForm("login"), 4000);
+        } else {
+            errorDiv.innerText = "Email not found";
+            successDiv.innerText = "";
+        }
+    }
+
+    function logout() {
+        currentUser = null;
+        localStorage.removeItem("seclab_current_user");
+        document.getElementById("mainApp").style.display = "none";
+        document.getElementById("authModal").style.display = "flex";
+        showAuthForm("login");
+    }
+
+    // ---------- CHALLENGES DATA ----------
+    const challengesData = [
+        { id: 1, name: "IDOR: Broken Access", shortDesc: "Parameter manipulation leads to privilege escalation", description: "Terdapat endpoint profile dengan parameter userId. Sebagai user biasa, kamu harus mengakses data user lain yang memiliki flag tersembunyi.", difficulty: "easy", points: 150, type: "idor", flag: "CTF{IDOR_MASTER_2025}" },
+        { id: 2, name: "Reflected XSS", shortDesc: "Cross-site scripting reflection", description: "Cari celah XSS reflected pada parameter pencarian. Eksekusi alert dan temukan flag di simulated response.", difficulty: "easy", points: 200, type: "xss_reflected", flag: "CTF{XSS_REFLEX_4LERT}" },
+        { id: 3, name: "Stored XSS", shortDesc: "Persistent XSS attack", description: "Guestbook menyimpan input tanpa sanitasi. Gunakan stored XSS untuk mencuri 'cookie' simulasi yang berisi flag.", difficulty: "medium", points: 250, type: "stored_xss", flag: "CTF{ST0R3D_P3RSIST3NT}" },
+        { id: 4, name: "Command Injection", shortDesc: "OS command injection (simulated)", description: "Web app memiliki fitur ping. Lakukan command injection untuk membaca file flag.txt (simulasi).", difficulty: "medium", points: 220, type: "cmd_injection", flag: "CTF{CMD_INJECT_SIM}" },
+        { id: 5, name: "SQLi Auth Bypass", shortDesc: "SQL injection login bypass", description: "Halaman login rentan SQL injection. Bypass authentication dan dapatkan flag admin.", difficulty: "medium", points: 230, type: "sqli_bypass", flag: "CTF{SQL_UNION_MASTER}" },
+        { id: 6, name: "Info Disclosure", shortDesc: "Path traversal & error leak", description: "Parameter document ID tidak divalidasi. Akses document ID yang tidak sah untuk melihat informasi bocor berisi flag.", difficulty: "easy", points: 120, type: "info_disclosure", flag: "CTF{PATH_LEAK_DEBUG}" }
+    ];
+
+    let challenges = [];
+    let activeChallenge = null;
+    let storedComments = [];
+
+    function loadUserChallenges() {
+        const progress = loadUserProgress(currentUser);
+        const solvedIds = progress.solvedChallenges || [];
+        challenges = challengesData.map(c => ({
+            ...c,
+            solved: solvedIds.includes(c.id)
+        }));
+    }
+
+    function saveProgress() {
+        const solvedIds = challenges.filter(c => c.solved).map(c => c.id);
+        const totalPoints = challenges.filter(c => c.solved).reduce((sum, c) => sum + c.points, 0);
+        saveUserProgress(currentUser, { solvedChallenges: solvedIds, totalPoints });
+    }
+
+    function updateStats() {
+        const solved = challenges.filter(c => c.solved).length;
+        const total = challenges.length;
+        const totalPoints = challenges.filter(c => c.solved).reduce((sum, c) => sum + c.points, 0);
+        document.getElementById("solvedCountNav").innerText = solved;
+        document.getElementById("totalChallenges").innerText = total;
+        document.getElementById("totalPoints").innerText = totalPoints;
+        const percent = (solved / total) * 100;
+        document.getElementById("globalProgress").style.width = `${percent}%`;
+        document.getElementById("progressPercent").innerText = `${Math.round(percent)}% complete`;
+        saveProgress();
+    }
+
+    function renderChallengeCards() {
+        const grid = document.getElementById("challengeGrid");
+        grid.innerHTML = challenges.map(chal => `
+            <div class="challenge-card" data-id="${chal.id}">
+                <div class="card-preview">
+                    <div class="icon">${getIconForType(chal.type)}</div>
+                    <span class="difficulty ${chal.difficulty}">${chal.difficulty.toUpperCase()}</span>
+                </div>
+                <div class="card-content">
+                    <div class="card-title">
+                        ${chal.name}
+                        <span class="card-points">${chal.points} pts</span>
+                    </div>
+                    <div class="card-desc">${chal.shortDesc}</div>
+                    <div class="card-status ${chal.solved ? 'solved' : ''}">${chal.solved ? '✓ SOLVED' : '⚡ NOT SOLVED'}</div>
+                </div>
+            </div>
+        `).join("");
+        
+        document.querySelectorAll(".challenge-card").forEach(card => {
+            card.addEventListener("click", () => {
+                const id = parseInt(card.dataset.id);
+                openChallenge(id);
+            });
+        });
+    }
+
+    function getIconForType(type) {
+        const icons = { idor: "🔓", xss_reflected: "💀", stored_xss: "📖", cmd_injection: "⌨️", sqli_bypass: "🗄️", info_disclosure: "📁" };
+        return icons[type] || "🔧";
+    }
+
+    function renderSimulator(container, challenge) {
+        switch(challenge.type) {
+            case "idor":
+                renderIDOR(container, challenge); break;
+            case "xss_reflected":
+                renderXSSReflected(container, challenge); break;
+            case "stored_xss":
+                renderStoredXSS(container, challenge); break;
+            case "cmd_injection":
+                renderCmdInjection(container, challenge); break;
+            case "sqli_bypass":
+                renderSQLi(container, challenge); break;
+            case "info_disclosure":
+                renderInfoDisc(container, challenge); break;
+        }
+    }
+
+    function renderIDOR(container, challenge) {
+        const userDB = { 1001: "Visitor", 1002: "Editor", 9999: `Admin: ${challenge.flag}` };
+        container.innerHTML = `<div class="interactive-area"><label>User ID:</label><input type="text" id="idorInput" style="width:100%; margin:10px 0;"><button id="idorBtn">Access Profile</button><div id="idorOutput" style="margin-top:12px; background:#05070c; padding:12px; border-radius:12px;"></div><div class="info-text">💡 Hint: coba akses user dengan ID 9999</div></div>`;
+        document.getElementById("idorBtn")?.addEventListener("click", () => {
+            const id = document.getElementById("idorInput").value;
+            const out = document.getElementById("idorOutput");
+            if (userDB[id]) { out.innerHTML = userDB[id]; if (userDB[id].includes("CTF{")) showFlagHint(challenge.flag, challenge); }
+            else out.innerHTML = "User tidak ditemukan. Coba ID 9999";
+        });
+    }
+
+    function renderXSSReflected(container, challenge) {
+        container.innerHTML = `<div class="interactive-area"><input type="text" id="xssPayload" placeholder='&lt;img src=x onerror=alert("XSS")&gt;' style="width:100%;"><button id="xssBtn">Reflect</button><div id="xssOutput" style="margin-top:12px; background:#05070c; padding:12px; border-radius:12px;"></div><div class="info-text">💡 Gunakan payload XSS untuk menampilkan flag.</div></div>`;
+        document.getElementById("xssBtn")?.addEventListener("click", () => {
+            let payload = document.getElementById("xssPayload").value;
+            const outDiv = document.getElementById("xssOutput");
+            if (payload.includes("<script") || payload.includes("onerror") || payload.includes("alert")) {
+                outDiv.innerHTML = `<span style="color:#ffd700;">⚠️ XSS detected! Flag: ${challenge.flag}</span>`;
+                showFlagHint(challenge.flag, challenge);
+            } else outDiv.innerHTML = `Reflected: ${payload}`;
+        });
+    }
+
+    function renderStoredXSS(container, challenge) {
+        const renderComments = () => {
+            const commentDiv = document.getElementById("storedCommentsList");
+            if (!commentDiv) return;
+            commentDiv.innerHTML = storedComments.map(c => `<div style="border-bottom:1px solid #2d3348; padding:6px;"><b>${c.name}</b>: ${c.msg}</div>`).join("");
+            const anyXSS = storedComments.some(c => c.msg.includes("<script") || c.msg.includes("onerror"));
+            if (anyXSS && !challenge.solved) {
+                document.getElementById("storedFlagMsg").innerHTML = `<span style="color:#ffd700;">🎯 Stored XSS executed! Flag: ${challenge.flag}</span>`;
+                showFlagHint(challenge.flag, challenge);
+            }
+        };
+        container.innerHTML = `<div class="interactive-area"><input type="text" id="storedName" placeholder="Name" style="margin-bottom:8px;"><textarea id="storedMsg" rows="2" placeholder="Message with XSS payload"></textarea><button id="postCommentBtn">Post Comment</button><div id="storedCommentsList" style="background:#05070c; padding:12px; border-radius:12px; margin-top:12px; max-height:150px; overflow:auto;"></div><div id="storedFlagMsg"></div></div>`;
+        document.getElementById("postCommentBtn")?.addEventListener("click", () => {
+            const name = document.getElementById("storedName").value || "anon";
+            const msg = document.getElementById("storedMsg").value;
+            if (msg) { storedComments.push({ name, msg }); renderComments(); document.getElementById("storedMsg").value = ""; }
+        });
+        renderComments();
+    }
+
+    function renderCmdInjection(container, challenge) {
+        container.innerHTML = `<div class="interactive-area"><input type="text" id="cmdInput" placeholder="8.8.8.8; cat flag.txt" style="width:100%;"><button id="cmdBtn">Execute Ping</button><div id="cmdOutput" style="margin-top:12px; background:#05070c; padding:12px; border-radius:12px;"></div><div class="info-text">💡 command injection: <code>; echo "${challenge.flag}"</code></div></div>`;
+        document.getElementById("cmdBtn")?.addEventListener("click", () => {
+            let cmd = document.getElementById("cmdInput").value;
+            const out = document.getElementById("cmdOutput");
+            if (cmd.includes(";") || cmd.includes("|") || cmd.includes("cat") || cmd.includes("flag")) {
+                out.innerHTML = `<span style="color:#ffd700;">🚀 Command injection success! ${challenge.flag}</span>`;
+                showFlagHint(challenge.flag, challenge);
+            } else out.innerHTML = `Pinging ${cmd}... (simulated safe)`;
+        });
+    }
+
+    function renderSQLi(container, challenge) {
+        container.innerHTML = `<div class="interactive-area"><input type="text" id="sqlUser" placeholder="username" style="margin-bottom:8px;"><input type="password" id="sqlPass" placeholder="password"><button id="sqlLoginBtn">Login</button><div id="sqlOutput" style="margin-top:12px; background:#05070c; padding:12px; border-radius:12px;"></div><div class="info-text">💡 SQLi payload: <code>admin' OR '1'='1' --</code></div></div>`;
+        document.getElementById("sqlLoginBtn")?.addEventListener("click", () => {
+            const user = document.getElementById("sqlUser").value;
+            const pass = document.getElementById("sqlPass").value;
+            const out = document.getElementById("sqlOutput");
+            if (user.includes("'") || user.includes("--") || user.includes("OR") || pass.includes("'")) {
+                out.innerHTML = `<span style="color:#ffd700;">✅ SQL Injection Bypass! Flag: ${challenge.flag}</span>`;
+                showFlagHint(challenge.flag, challenge);
+            } else out.innerHTML = "Login failed. Try SQL injection.";
+        });
+    }
+
+    function renderInfoDisc(container, challenge) {
+        const docs = { 1: "Public data", 2: "Internal Memo", 99: `FLAG: ${challenge.flag}` };
+        container.innerHTML = `<div class="interactive-area"><input type="number" id="docId" placeholder="Document ID"><button id="viewDocBtn">View Document</button><div id="docOutput" style="margin-top:12px; background:#05070c; padding:12px; border-radius:12px;"></div><div class="info-text">💡 Coba akses ID 99 atau ID tidak valid untuk path disclosure + flag</div></div>`;
+        document.getElementById("viewDocBtn")?.addEventListener("click", () => {
+            let id = document.getElementById("docId").value;
+            const out = document.getElementById("docOutput");
+            if (docs[id]) { out.innerHTML = docs[id]; if (docs[id].includes("CTF{")) showFlagHint(challenge.flag, challenge); }
+            else { out.innerHTML = `Error: file /var/www/docs/${id}.bak not found... ${challenge.flag}`; showFlagHint(challenge.flag, challenge); }
+        });
+    }
+
+    function showFlagHint(flag, challenge) {
+        const flagInput = document.getElementById("modalFlagInput");
+        if (flagInput && !challenge.solved) {
+            // Just a visual hint
+        }
+    }
+
+    function openChallenge(id) {
+        const challenge = challenges.find(c => c.id === id);
+        if (!challenge) return;
+        activeChallenge = challenge;
+        
+        const modal = document.getElementById("labModal");
+        const modalTitle = document.getElementById("modalTitle");
+        const modalBodyDiv = document.getElementById("modalBody");
+        
+        modalTitle.innerText = `${challenge.name} (${challenge.points} pts)`;
+        modalBodyDiv.innerHTML = `
+            <div class="challenge-description"><strong>📖 Description</strong><br>${challenge.description}</div>
+            <div class="lab-environment"><div class="env-title">🔬 Lab Environment</div><div id="labContent"><button id="startLabBtn" class="start-lab-btn">🚀 START CHALLENGE</button></div></div>
+            <div class="flag-submit"><input type="text" id="modalFlagInput" placeholder="Enter flag..."><button id="submitFlagBtn">Submit Flag</button></div>
+        `;
+        
+        modal.classList.add("active");
+        
+        document.getElementById("startLabBtn")?.addEventListener("click", () => {
+            const labContainer = document.getElementById("labContent");
+            labContainer.innerHTML = `<div id="modalSimulator"></div>`;
+            renderSimulator(document.getElementById("modalSimulator"), challenge);
+            const startBtn = document.getElementById("startLabBtn");
+            if (startBtn) { startBtn.innerText = "🟢 LAB ACTIVE"; startBtn.disabled = true; startBtn.style.opacity = "0.7"; }
+        });
+        
+        document.getElementById("submitFlagBtn")?.addEventListener("click", () => {
+            const flagInput = document.getElementById("modalFlagInput");
+            if (flagInput.value.trim() === challenge.flag) {
+                if (!challenge.solved) {
+                    challenge.solved = true;
+                    updateStats();
+                    renderChallengeCards();
+                    showToast(`✅ Correct! +${challenge.points} points`, "#2e7d32");
+                    modal.classList.remove("active");
+                } else showToast("Already solved!", "#ed6c02");
+            } else showToast("❌ Wrong flag! Try again.", "#d32f2f");
+        });
+    }
+
+    function showToast(msg, bg) {
+        const toast = document.createElement("div");
+        toast.className = "toast";
+        toast.innerText = msg;
+        toast.style.background = bg;
+        toast.style.color = "white";
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+
+    // Initialize
+    document.getElementById("closeModalBtn")?.addEventListener("click", () => {
+        document.getElementById("labModal").classList.remove("active");
+    });
+    
+    document.getElementById("logoutBtn")?.addEventListener("click", logout);
+
+    // Check existing session
+    const savedUser = localStorage.getItem("seclab_current_user");
+    if (savedUser) {
+        currentUser = savedUser;
+        document.getElementById("authModal").style.display = "none";
+        document.getElementById("mainApp").style.display = "block";
+        loadUserChallenges();
+        document.getElementById("welcomeUsername").innerText = currentUser;
+        document.getElementById("usernameDisplay").innerText = currentUser;
+        updateStats();
+        renderChallengeCards();
+    } else {
+        document.getElementById("authModal").style.display = "flex";
+        showAuthForm("login");
+    }
+</script>
+</body>
+</html> 
